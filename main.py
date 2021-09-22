@@ -216,6 +216,7 @@ class ScalpAlgo:
 
 
 def main(args):
+    logger.info(f'main 1')
     stream = Stream(ALPACA_API_KEY,
                     ALPACA_SECRET_KEY,
                     base_url=URL('https://paper-api.alpaca.markets'),
@@ -223,6 +224,7 @@ def main(args):
     api = alpaca.REST(key_id=ALPACA_API_KEY,
                     secret_key=ALPACA_SECRET_KEY,
                     base_url="https://paper-api.alpaca.markets")
+    logger.info(f'main 2')
 
     fleet = {}
     symbols = args.symbols
@@ -278,4 +280,5 @@ if __name__ == '__main__':
     parser.add_argument('symbols', nargs='+')
     parser.add_argument('--lot', type=float, default=2000)
 
+    logger.info(f'one')
     main(parser.parse_args())
