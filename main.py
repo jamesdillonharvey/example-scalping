@@ -26,7 +26,7 @@ class ScalpAlgo:
         market_open = now.replace(hour=9, minute=30)
         yesterday = (now - pd.Timedelta('1day')).strftime('%Y-%m-%dT%H:%M:00-04:00')
         logger.info(f'yesterday:{yesterday}')    
-        today = (now - pd.Timedelta('20m')).strftime('%Y-%m-%dT%H:%M:00-04:00')
+        today = (now - pd.Timedelta('15m')).strftime('%Y-%m-%dT%H:%M:00-04:00')
         logger.info(f'today:{today}')    
         logger.info(f'Scalp 2')
         while 1:
@@ -37,11 +37,16 @@ class ScalpAlgo:
                                     adjustment='raw').df
                 logger.info(f'Scalp 3')
                 break
+            except KeyboardInterrupt:
+                logger.info(f'Exit')
+                sys.exit()
+
             except Exception as e:
                 # make sure we get bars
                 print(e)
-                logger.info(f'Fail')
-                sys.exit()
+                time.sleep(10)
+                pass
+
         logger.info(f'Scalp 5')
         bars = data[market_open:]
         self._bars = bars
@@ -233,7 +238,9 @@ def main(args):
 
     fleet = {}
     symbols = args.symbols
+    logger.info(f'Symbols: {symbols}')
     for symbol in symbols:
+        logger.info(f'Symbol: {symbol}')
         algo = ScalpAlgo(api, symbol, lot=args.lot)
         fleet[symbol] = algo
     logger.info(f'main 3')
@@ -284,8 +291,8 @@ if __name__ == '__main__':
     logger.addHandler(fh)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('symbols', nargs='+')
-    parser.add_argument('--lot', type=float, default=2000)
+    parser.add_argument('--symbols', nargs='+', default=["AAPL","AMZN","NFLX","MSFT","GOOG","NVDA","DIS","BAC","WFC","PFE","XOM","BABA","TSLA"])
+    parser.add_argument('--lot', type=float, default=200)
 
     logger.info(f'one')
     main(parser.parse_args())
