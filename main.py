@@ -11,8 +11,6 @@ from alpaca_trade_api.rest import TimeFrame
 
 logger = logging.getLogger()
 
-ALPACA_API_KEY = "<key_id>"
-ALPACA_SECRET_KEY = "<secret_key>"
 
 
 class ScalpAlgo:
@@ -23,20 +21,28 @@ class ScalpAlgo:
         self._bars = []
         self._l = logger.getChild(self._symbol)
 
+        logger.info(f'Scalp 1')
         now = pd.Timestamp.now(tz='America/New_York').floor('1min')
         market_open = now.replace(hour=9, minute=30)
-        today = now.strftime('%Y-%m-%d')
-        tomorrow = (now + pd.Timedelta('1day')).strftime('%Y-%m-%d')
+        yesterday = (now - pd.Timedelta('1day')).strftime('%Y-%m-%dT%H:%M:00-04:00')
+        logger.info(f'yesterday:{yesterday}')    
+        today = (now - pd.Timedelta('20m')).strftime('%Y-%m-%dT%H:%M:00-04:00')
+        logger.info(f'today:{today}')    
+        logger.info(f'Scalp 2')
         while 1:
             # at inception this results sometimes in api errors. this will work
             # around it. feel free to remove it once everything is stable
             try:
-                data = api.get_bars(symbol, TimeFrame.Minute, today, tomorrow,
+                data = api.get_bars(symbol, TimeFrame.Minute, yesterday, today,
                                     adjustment='raw').df
+                logger.info(f'Scalp 3')
                 break
-            except:
+            except Exception as e:
                 # make sure we get bars
-                pass
+                print(e)
+                logger.info(f'Fail')
+                sys.exit()
+        logger.info(f'Scalp 5')
         bars = data[market_open:]
         self._bars = bars
 
@@ -217,20 +223,20 @@ class ScalpAlgo:
 
 def main(args):
     logger.info(f'main 1')
-    stream = Stream(ALPACA_API_KEY,
-                    ALPACA_SECRET_KEY,
-                    base_url=URL('https://paper-api.alpaca.markets'),
+    stream = Stream(base_url=URL('https://paper-api.alpaca.markets'),
                     data_feed='iex')  # <- replace to sip for PRO subscription
-    api = alpaca.REST(key_id=ALPACA_API_KEY,
-                    secret_key=ALPACA_SECRET_KEY,
-                    base_url="https://paper-api.alpaca.markets")
+    api = alpaca.REST(base_url="https://paper-api.alpaca.markets")
     logger.info(f'main 2')
+
+    account = api.get_account()
+    logger.info(account.status)
 
     fleet = {}
     symbols = args.symbols
     for symbol in symbols:
         algo = ScalpAlgo(api, symbol, lot=args.lot)
         fleet[symbol] = algo
+    logger.info(f'main 3')
 
     async def on_bars(data):
         if data.symbol in fleet:
@@ -238,6 +244,7 @@ def main(args):
 
     for symbol in symbols:
         stream.subscribe_bars(on_bars, symbol)
+    logger.info(f'main 4')
 
     async def on_trade_updates(data):
         logger.info(f'trade_updates {data}')
